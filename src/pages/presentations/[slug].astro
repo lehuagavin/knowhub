@@ -49,17 +49,6 @@ const formattedDate = new Date(presentation.date).toLocaleDateString('zh-CN', {
       <header class="presentation-header">
         <h1 class="presentation-title">{presentation.title}</h1>
         <p class="presentation-description">{presentation.description}</p>
-        <div class="presentation-meta">
-          <span class="presentation-date">{formattedDate}</span>
-          <span class="presentation-slides">{presentation.slideCount} 页幻灯片</span>
-        </div>
-        {presentation.tags && (
-          <div class="presentation-tags">
-            {presentation.tags.map((tag) => (
-              <span class="presentation-tag">{tag}</span>
-            ))}
-          </div>
-        )}
       </header>
 
       <div class="presentation-content">
@@ -132,7 +121,7 @@ const formattedDate = new Date(presentation.date).toLocaleDateString('zh-CN', {
   }
 
   .presentation-content {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
   }
 
