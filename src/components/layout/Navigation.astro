@@ -1,17 +1,18 @@
 ---
 import ThemeSwitcher from '../interactive/ThemeSwitcher.astro';
 import { topics } from '../../data/topics';
+import { url } from '../../utils/path';
 
 const navLinks = [
-  { name: '首页', href: '/' },
-  { name: '关于', href: '/about' },
+  { name: '首页', href: url('/') },
+  { name: '关于', href: url('/about') },
 ];
 ---
 
 <nav class="nav" id="navbar">
   <div class="container">
     <div class="nav-content">
-      <a href="/" class="logo">
+      <a href={url('/')} class="logo">
         <span class="logo-text">知识库</span>
       </a>
 
@@ -36,7 +37,7 @@ const navLinks = [
           <ul class="dropdown-menu" id="topics-dropdown-menu">
             {topics.map((topic) => (
               <li>
-                <a href={`/topics/${topic.slug}`} class="dropdown-link">
+                <a href={url(`/topics/${topic.slug}`)} class="dropdown-link">
                   <span class="dropdown-icon">{topic.icon}</span>
                   {topic.name}
                 </a>

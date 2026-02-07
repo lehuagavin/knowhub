@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import HeroSection from '../components/sections/HeroSection.astro';
 import FeatureGrid from '../components/content/FeatureGrid.astro';
 import { topics } from '../data/topics';
+import { url } from '../utils/path';
 
 const features = [
   {
@@ -65,7 +66,7 @@ const features = [
       <h2 class="section-title">当前主题</h2>
       <div class="topics-list">
         {topics.map((topic) => (
-          <a href={`/topics/${topic.slug}`} class="topic-item">
+          <a href={url(`/topics/${topic.slug}`)} class="topic-item">
             <span class="topic-icon">{topic.icon}</span>
             <div class="topic-info">
               <h3 class="topic-name">{topic.name}</h3>

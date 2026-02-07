@@ -9,9 +9,11 @@ interface Props {
 }
 
 const { slug, name, description, icon, color, articleCount } = Astro.props;
+
+import { url } from '../../utils/path';
 ---
 
-<a href={`/topics/${slug}`} class="topic-card">
+<a href={url(`/topics/${slug}`)} class="topic-card">
   <div class="topic-icon" style={`background: ${color}15; color: ${color}`}>
     {icon}
   </div>

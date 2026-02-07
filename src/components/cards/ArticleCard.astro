@@ -14,6 +14,8 @@ interface Props {
 
 const { slug, title, summary, tags, date, readingTime, topicSlug, topicName, topicIcon, topicColor } = Astro.props;
 
+import { url } from '../../utils/path';
+
 const formattedDate = new Date(date).toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: 'long',
@@ -21,7 +23,7 @@ const formattedDate = new Date(date).toLocaleDateString('zh-CN', {
 });
 ---
 
-<a href={`/topics/${topicSlug}/${slug}`} class="article-card">
+<a href={url(`/topics/${topicSlug}/${slug}`)} class="article-card">
   <div class="article-header">
     {topicName && (
       <span class="article-topic" style={topicColor ? `color: ${topicColor}` : ''}>

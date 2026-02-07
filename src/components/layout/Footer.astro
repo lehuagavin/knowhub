@@ -1,16 +1,17 @@
 ---
 import { topics } from '../../data/topics';
+import { url } from '../../utils/path';
 
 const currentYear = new Date().getFullYear();
 
 const footerLinks = {
   知识汇总: topics.map((t) => ({
     name: `${t.icon} ${t.name}`,
-    href: `/topics/${t.slug}`,
+    href: url(`/topics/${t.slug}`),
   })),
   导航: [
-    { name: '首页', href: '/' },
-    { name: '关于', href: '/about' },
+    { name: '首页', href: url('/') },
+    { name: '关于', href: url('/about') },
   ],
 };
 ---

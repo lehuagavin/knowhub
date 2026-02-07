@@ -4,6 +4,7 @@ import HeroSection from '../../components/sections/HeroSection.astro';
 import ArticleCard from '../../components/cards/ArticleCard.astro';
 import Breadcrumb from '../../components/content/Breadcrumb.astro';
 import { topics, getTopic } from '../../data/topics';
+import { url } from '../../utils/path';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (() => {
@@ -16,7 +17,7 @@ const { slug } = Astro.params;
 const topic = getTopic(slug);
 
 if (!topic) {
-  return Astro.redirect('/');
+  return Astro.redirect(url('/'));
 }
 
 const breadcrumbItems = [
@@ -66,7 +67,7 @@ const breadcrumbItems = [
           <p class="empty-description">
             该主题的文章正在撰写中，敬请期待！
           </p>
-          <a href="/" class="btn btn-secondary">返回首页</a>
+          <a href={url('/')} class="btn btn-secondary">返回首页</a>
         </div>
       )}
     </div>

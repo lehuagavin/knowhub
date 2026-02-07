@@ -2,6 +2,7 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumb from '../../../components/content/Breadcrumb.astro';
 import { topics, getTopic } from '../../../data/topics';
+import { url } from '../../../utils/path';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (() => {
@@ -16,13 +17,13 @@ const { slug, article: articleSlug } = Astro.params;
 const topic = getTopic(slug);
 
 if (!topic) {
-  return Astro.redirect('/');
+  return Astro.redirect(url('/'));
 }
 
 const article = topic.articles.find((a) => a.slug === articleSlug);
 
 if (!article) {
-  return Astro.redirect(`/topics/${slug}`);
+  return Astro.redirect(url(`/topics/${slug}`));
 }
 
 const currentIndex = topic.articles.findIndex((a) => a.slug === articleSlug);
@@ -44,7 +45,7 @@ const formattedUpdated = article.updated
   : null;
 
 const breadcrumbItems = [
-  { name: topic.name, href: `/topics/${topic.slug}` },
+  { name: topic.name, href: url(`/topics/${topic.slug}`) },
   { name: article.title },
 ];
 ---
@@ -60,7 +61,7 @@ const breadcrumbItems = [
       <article class="article-content">
         <header class="article-header">
           <div class="article-meta">
-            <a href={`/topics/${topic.slug}`} class="article-topic" style={`color: ${topic.color}`}>
+            <a href={url(`/topics/${topic.slug}`)} class="article-topic" style={`color: ${topic.color}`}>
               {topic.icon} {topic.name}
             </a>
             <span class="article-date">{formattedDate}</span>
@@ -88,7 +89,7 @@ const breadcrumbItems = [
       <!-- 导航 -->
       <nav class="article-nav">
         {prevArticle ? (
-          <a href={`/topics/${topic.slug}/${prevArticle.slug}`} class="nav-prev">
+          <a href={url(`/topics/${topic.slug}/${prevArticle.slug}`)} class="nav-prev">
             <span class="nav-label">上一篇</span>
             <span class="nav-title">{prevArticle.title}</span>
           </a>
@@ -96,7 +97,7 @@ const breadcrumbItems = [
           <div />
         )}
         {nextArticle ? (
-          <a href={`/topics/${topic.slug}/${nextArticle.slug}`} class="nav-next">
+          <a href={url(`/topics/${topic.slug}/${nextArticle.slug}`)} class="nav-next">
             <span class="nav-label">下一篇</span>
             <span class="nav-title">{nextArticle.title}</span>
           </a>
