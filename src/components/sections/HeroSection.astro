@@ -78,7 +78,7 @@ const { title, subtitle, cta, secondaryCta, gradient = true, backgroundImage } =
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0.3;
+    opacity: 0.6;
   }
 
   .hero.has-bg-image::before {
@@ -86,16 +86,26 @@ const { title, subtitle, cta, secondaryCta, gradient = true, backgroundImage } =
     position: absolute;
     inset: 0;
     z-index: 2;
-    background: linear-gradient(135deg,
-      rgba(0, 0, 0, 0.4) 0%,
-      rgba(0, 0, 0, 0.2) 50%,
-      rgba(0, 0, 0, 0.4) 100%
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.35) 40%,
+      rgba(0, 0, 0, 0.5) 100%
     );
   }
 
   @media (prefers-color-scheme: dark) {
     .hero-bg-image img {
-      opacity: 0.25;
+      opacity: 0.5;
+    }
+
+    .hero.has-bg-image::before {
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.55) 0%,
+        rgba(0, 0, 0, 0.45) 40%,
+        rgba(0, 0, 0, 0.6) 100%
+      );
     }
   }
 
@@ -130,6 +140,51 @@ const { title, subtitle, cta, secondaryCta, gradient = true, backgroundImage } =
     max-width: 700px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  /* 有背景图时，文字切换为亮色以保证可读性 */
+  .hero.has-bg-image .hero-title {
+    background: linear-gradient(135deg,
+      #ffffff 0%,
+      #e0e7ff 50%,
+      #c4b5fd 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  }
+
+  .hero.has-bg-image .hero-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .hero.has-bg-image .btn-primary {
+    background-color: rgba(255, 255, 255, 0.95);
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .hero.has-bg-image .btn-primary:hover {
+    background-color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .hero.has-bg-image .btn-secondary {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(8px);
+  }
+
+  .hero.has-bg-image .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
   }
 
   .hero-actions {
