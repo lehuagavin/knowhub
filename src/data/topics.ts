@@ -8,6 +8,7 @@ export interface Article {
   date: string;
   updated?: string;
   readingTime?: string;
+  image?: string;          // 文章封面图（相对于 public 目录的路径）
 }
 
 export interface Topic {
@@ -16,6 +17,7 @@ export interface Topic {
   description: string;
   icon: string;
   color: string;
+  heroImage?: string;      // 主题 Hero 背景图（相对于 public 目录的路径）
   articles: Article[];
 }
 
@@ -26,6 +28,7 @@ export const topics: Topic[] = [
     description: 'Rust 语言核心概念、所有权系统、并发编程、生态工具等',
     icon: '🦀',
     color: '#dea584',
+    heroImage: '/images/topics/rust-hero.png',
     articles: [
       {
         slug: 'design-philosophy',
@@ -34,6 +37,7 @@ export const topics: Topic[] = [
         tags: ['Rust', '设计哲学', '所有权', '并发', '类型系统'],
         date: '2026-02-07',
         readingTime: '10 分钟',
+        image: '/images/articles/rust-design-philosophy.png',
       },
     ],
   },
@@ -43,6 +47,7 @@ export const topics: Topic[] = [
     description: '多模态AI Agent架构、工具调用、视觉推理、编排框架等',
     icon: '🤖',
     color: '#8b5cf6',
+    heroImage: '/images/topics/multimodal-agent-hero.png',
     articles: [],
   },
   {
@@ -51,6 +56,7 @@ export const topics: Topic[] = [
     description: 'Python 高级特性、异步编程、数据科学、Web开发等',
     icon: '🐍',
     color: '#3572A5',
+    heroImage: '/images/topics/python-hero.png',
     articles: [],
   },
 ];
@@ -68,6 +74,7 @@ export function getTopicsSummary() {
     description: t.description,
     icon: t.icon,
     color: t.color,
+    heroImage: t.heroImage,
     articleCount: t.articles.length,
   }));
 }
@@ -85,6 +92,15 @@ export function getAllArticles() {
       }))
     )
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+// 获取主题 Hero 图片映射
+export function getTopicHeroImages(): Record<string, string> {
+  const map: Record<string, string> = {};
+  topics.forEach((t) => {
+    if (t.heroImage) map[t.slug] = t.heroImage;
+  });
+  return map;
 }
 
 // 获取所有标签

@@ -10,9 +10,10 @@ interface Props {
   topicName?: string;
   topicIcon?: string;
   topicColor?: string;
+  image?: string;
 }
 
-const { slug, title, summary, tags, date, readingTime, topicSlug, topicName, topicIcon, topicColor } = Astro.props;
+const { slug, title, summary, tags, date, readingTime, topicSlug, topicName, topicIcon, topicColor, image } = Astro.props;
 
 import { url } from '../../utils/path';
 
@@ -24,24 +25,31 @@ const formattedDate = new Date(date).toLocaleDateString('zh-CN', {
 ---
 
 <a href={url(`/topics/${topicSlug}/${slug}`)} class="article-card">
-  <div class="article-header">
-    {topicName && (
-      <span class="article-topic" style={topicColor ? `color: ${topicColor}` : ''}>
-        {topicIcon && <span class="article-topic-icon">{topicIcon}</span>}
-        {topicName}
-      </span>
-    )}
-    <span class="article-date">{formattedDate}</span>
-  </div>
-  <h3 class="article-title">{title}</h3>
-  <p class="article-summary">{summary}</p>
-  <div class="article-footer">
-    <div class="article-tags">
-      {tags.slice(0, 3).map((tag) => (
-        <span class="article-tag">{tag}</span>
-      ))}
+  {image && (
+    <div class="article-thumbnail">
+      <img src={url(image)} alt={title} loading="lazy" />
     </div>
-    {readingTime && <span class="article-reading-time">{readingTime}</span>}
+  )}
+  <div class="article-body-content">
+    <div class="article-header">
+      {topicName && (
+        <span class="article-topic" style={topicColor ? `color: ${topicColor}` : ''}>
+          {topicIcon && <span class="article-topic-icon">{topicIcon}</span>}
+          {topicName}
+        </span>
+      )}
+      <span class="article-date">{formattedDate}</span>
+    </div>
+    <h3 class="article-title">{title}</h3>
+    <p class="article-summary">{summary}</p>
+    <div class="article-footer">
+      <div class="article-tags">
+        {tags.slice(0, 3).map((tag) => (
+          <span class="article-tag">{tag}</span>
+        ))}
+      </div>
+      {readingTime && <span class="article-reading-time">{readingTime}</span>}
+    </div>
   </div>
 </a>
 
@@ -49,17 +57,38 @@ const formattedDate = new Date(date).toLocaleDateString('zh-CN', {
   .article-card {
     display: block;
     background: var(--surface);
-    padding: var(--space-6);
     border-radius: var(--radius-lg);
     text-decoration: none;
     transition: all var(--duration-normal) var(--ease-out);
     border-left: 3px solid transparent;
+    overflow: hidden;
   }
 
   .article-card:hover {
     transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
     border-left-color: var(--primary);
+  }
+
+  .article-thumbnail {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+  }
+
+  .article-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  .article-card:hover .article-thumbnail img {
+    transform: scale(1.05);
+  }
+
+  .article-body-content {
+    padding: var(--space-6);
   }
 
   .article-header {

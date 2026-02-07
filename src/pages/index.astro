@@ -5,6 +5,7 @@ import StatsSection from '../components/sections/StatsSection.astro';
 import TopicCard from '../components/cards/TopicCard.astro';
 import ArticleCard from '../components/cards/ArticleCard.astro';
 import { topics, getStats, getAllArticles, getTopicsSummary } from '../data/topics';
+import { url } from '../utils/path';
 
 const stats_data = getStats();
 const topicsSummary = getTopicsSummary();
@@ -27,6 +28,7 @@ const stats = [
     subtitle="汇聚 Rust、多模态Agent、Python 等领域的学习笔记与技术文章，探索技术前沿，沉淀知识体系。"
     cta={{ text: '开始探索', href: '#topics' }}
     gradient={true}
+    backgroundImage={url('/images/hero/hero-main.png')}
   />
 
   <StatsSection stats={stats} />
@@ -67,6 +69,7 @@ const stats = [
               topicName={article.topicName}
               topicIcon={article.topicIcon}
               topicColor={article.topicColor}
+              image={article.image}
             />
           ))}
         </div>

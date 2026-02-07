@@ -6,24 +6,33 @@ interface Props {
   icon: string;
   color: string;
   articleCount: number;
+  heroImage?: string;
 }
 
-const { slug, name, description, icon, color, articleCount } = Astro.props;
+const { slug, name, description, icon, color, articleCount, heroImage } = Astro.props;
 
 import { url } from '../../utils/path';
 ---
 
 <a href={url(`/topics/${slug}`)} class="topic-card">
-  <div class="topic-icon" style={`background: ${color}15; color: ${color}`}>
-    {icon}
-  </div>
-  <h3 class="topic-name">{name}</h3>
-  <p class="topic-description">{description}</p>
-  <div class="topic-meta">
-    <span class="topic-count" style={`color: ${color}`}>
-      {articleCount > 0 ? `${articleCount} 篇文章` : '即将更新'}
-    </span>
-    <span class="topic-arrow">→</span>
+  {heroImage && (
+    <div class="topic-thumbnail">
+      <img src={url(heroImage)} alt={name} loading="lazy" />
+      <div class="topic-thumbnail-overlay" />
+    </div>
+  )}
+  <div class="topic-content">
+    <div class="topic-icon" style={`background: ${color}15; color: ${color}`}>
+      {icon}
+    </div>
+    <h3 class="topic-name">{name}</h3>
+    <p class="topic-description">{description}</p>
+    <div class="topic-meta">
+      <span class="topic-count" style={`color: ${color}`}>
+        {articleCount > 0 ? `${articleCount} 篇文章` : '即将更新'}
+      </span>
+      <span class="topic-arrow">→</span>
+    </div>
   </div>
 </a>
 
@@ -31,12 +40,39 @@ import { url } from '../../utils/path';
   .topic-card {
     display: block;
     background: var(--surface);
-    padding: var(--space-8);
     border-radius: var(--radius-lg);
     text-decoration: none;
     transition: all var(--duration-normal) var(--ease-out);
     position: relative;
     overflow: hidden;
+  }
+
+  .topic-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+  }
+
+  .topic-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  .topic-card:hover .topic-thumbnail img {
+    transform: scale(1.08);
+  }
+
+  .topic-thumbnail-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.15) 100%);
+  }
+
+  .topic-content {
+    padding: var(--space-8);
   }
 
   .topic-card::before {

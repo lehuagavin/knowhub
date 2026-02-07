@@ -87,6 +87,11 @@ const breadcrumbItems = [
               <span class="article-tag">{tag}</span>
             ))}
           </div>
+          {article.image && (
+            <div class="article-hero-image">
+              <img src={url(article.image)} alt={article.title} />
+            </div>
+          )}
         </header>
 
         <div class="article-body prose">
@@ -191,6 +196,24 @@ const breadcrumbItems = [
     color: var(--text-secondary);
     border-radius: var(--radius-full);
     font-weight: 500;
+  }
+
+  .article-hero-image {
+    margin-top: var(--space-8);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+  }
+
+  .article-hero-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform var(--duration-normal) var(--ease-out);
+  }
+
+  .article-hero-image:hover img {
+    transform: scale(1.02);
   }
 
   .article-body {

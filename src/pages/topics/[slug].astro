@@ -33,6 +33,7 @@ const breadcrumbItems = [
     title={`${topic.icon} ${topic.name}`}
     subtitle={topic.description}
     gradient={true}
+    backgroundImage={topic.heroImage ? url(topic.heroImage) : undefined}
   />
 
   <section class="section">
@@ -56,6 +57,7 @@ const breadcrumbItems = [
                 date={article.date}
                 readingTime={article.readingTime}
                 topicSlug={topic.slug}
+                image={article.image}
               />
             ))}
           </div>
