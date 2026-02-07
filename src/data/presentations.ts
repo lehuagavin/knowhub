@@ -25,7 +25,7 @@ export const presentations: Presentation[] = [
 
 // 获取所有演示文稿
 export function getAllPresentations(): Presentation[] {
-  return presentations.sort(
+  return [...presentations].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 }

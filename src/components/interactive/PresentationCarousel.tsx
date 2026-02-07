@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import styles from './PresentationCarousel.module.css';
 
 export interface Slide {
   src: string;
@@ -12,6 +13,20 @@ interface PresentationCarouselProps {
   autoPlayInterval?: number;
 }
 
+// Resolve image path with base URL (build-time constant)
+const resolveImageSrc = (src: string): string => {
+  if (src.startsWith('http')) return src;
+  const base = (import.meta as any).env?.BASE_URL || '/knowhub';
+  if (src.startsWith('/')) {
+    return `${base.replace(/\/$/, '')}${src}`;
+  }
+  return `${base}${src}`;
+};
+
+// Helper to combine CSS module classes
+const cx = (...classes: (string | false | undefined | null)[]) =>
+  classes.filter(Boolean).join(' ');
+
 export default function PresentationCarousel({
   slides,
   title,
@@ -20,25 +35,59 @@ export default function PresentationCarousel({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState<Record<number, boolean>>({});
+  const [loadState, setLoadState] = useState<Record<number, 'loading' | 'loaded' | 'error'>>({});
   const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number>(0);
-  const touchEndX = useRef<number>(0);
+  const touchStartX = useRef(0);
+  const preloadedUrls = useRef(new Set<string>());
 
   const totalSlides = slides.length;
 
-  // Navigation
+  // Resolve all image sources once (stable unless slides prop changes)
+  const resolvedSrcs = useMemo(
+    () => slides.map((s) => resolveImageSrc(s.src)),
+    [slides]
+  );
+
+  // Navigation — functional updates avoid dependency on currentIndex,
+  // so goNext/goPrev are stable and won't trigger effect re-registration
   const goTo = useCallback(
     (index: number) => {
-      if (index < 0) setCurrentIndex(totalSlides - 1);
-      else if (index >= totalSlides) setCurrentIndex(0);
-      else setCurrentIndex(index);
+      setCurrentIndex(Math.max(0, Math.min(index, totalSlides - 1)));
     },
     [totalSlides]
   );
 
-  const goNext = useCallback(() => goTo(currentIndex + 1), [currentIndex, goTo]);
-  const goPrev = useCallback(() => goTo(currentIndex - 1), [currentIndex, goTo]);
+  const goNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % totalSlides);
+  }, [totalSlides]);
+
+  const goPrev = useCallback(() => {
+    setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+  }, [totalSlides]);
+
+  // Fullscreen API
+  const enterFullscreen = useCallback(async () => {
+    try {
+      await containerRef.current?.requestFullscreen?.();
+    } catch {
+      // Fullscreen not supported
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) exitFullscreen();
+    else enterFullscreen();
+  }, [enterFullscreen, exitFullscreen]);
 
   // Auto-play
   useEffect(() => {
@@ -47,10 +96,9 @@ export default function PresentationCarousel({
     return () => clearInterval(timer);
   }, [isPlaying, goNext, autoPlayInterval]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — all handler dependencies are now in the array
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle when this component or fullscreen is active
       if (!isFullscreen && !containerRef.current?.contains(document.activeElement)) {
         return;
       }
@@ -83,39 +131,11 @@ export default function PresentationCarousel({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen, goNext, goPrev]);
-
-  // Fullscreen API
-  const enterFullscreen = useCallback(async () => {
-    try {
-      if (containerRef.current?.requestFullscreen) {
-        await containerRef.current.requestFullscreen();
-      }
-    } catch {
-      // Fullscreen not supported
-    }
-  }, []);
-
-  const exitFullscreen = useCallback(async () => {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) exitFullscreen();
-    else enterFullscreen();
-  }, [enterFullscreen, exitFullscreen]);
+  }, [isFullscreen, goNext, goPrev, toggleFullscreen, exitFullscreen]);
 
   // Listen for fullscreen changes
   useEffect(() => {
-    const handler = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
@@ -126,244 +146,137 @@ export default function PresentationCarousel({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    touchEndX.current = e.changedTouches[0].screenX;
-    const diff = touchStartX.current - touchEndX.current;
+    const diff = touchStartX.current - e.changedTouches[0].screenX;
     if (Math.abs(diff) > 50) {
-      if (diff > 0) goNext();
-      else goPrev();
+      diff > 0 ? goNext() : goPrev();
     }
   };
 
-  // Preload adjacent images
+  // Preload adjacent images (with caching to avoid repeated requests)
   useEffect(() => {
-    const preloadIndexes = [
+    const indexes = [
       currentIndex,
       (currentIndex + 1) % totalSlides,
       (currentIndex - 1 + totalSlides) % totalSlides,
     ];
-    preloadIndexes.forEach((i) => {
-      const img = new Image();
-      img.src = slides[i].src;
+    indexes.forEach((i) => {
+      const url = resolvedSrcs[i];
+      if (!preloadedUrls.current.has(url)) {
+        preloadedUrls.current.add(url);
+        const img = new Image();
+        img.src = url;
+      }
     });
-  }, [currentIndex, slides, totalSlides]);
+  }, [currentIndex, resolvedSrcs, totalSlides]);
 
   const handleImageLoad = (index: number) => {
-    setIsLoaded((prev) => ({ ...prev, [index]: true }));
+    setLoadState((prev) => ({ ...prev, [index]: 'loaded' }));
   };
 
-  // Get base URL for image paths
-  const getImageSrc = (src: string) => {
-    // If the src already starts with http, use as-is
-    if (src.startsWith('http')) return src;
-    // For relative paths, prepend base URL
-    const base = (import.meta as any).env?.BASE_URL || '/knowhub';
-    if (src.startsWith('/')) {
-      return `${base.replace(/\/$/, '')}${src}`;
-    }
-    return `${base}${src}`;
+  const handleImageError = (index: number) => {
+    setLoadState((prev) => ({ ...prev, [index]: 'error' }));
   };
+
+  const currentState = loadState[currentIndex];
+  const isLoaded = currentState === 'loaded';
+  const isError = currentState === 'error';
 
   return (
     <div
       ref={containerRef}
-      className="presentation-carousel"
+      className={cx(styles.carousel, isFullscreen && styles.carouselFullscreen)}
       tabIndex={0}
-      style={{
-        position: 'relative',
-        width: '100%',
-        maxWidth: isFullscreen ? '100%' : '960px',
-        margin: '0 auto',
-        backgroundColor: isFullscreen ? '#000' : 'var(--surface, #f5f5f5)',
-        borderRadius: isFullscreen ? 0 : '12px',
-        overflow: 'hidden',
-        outline: 'none',
-        height: isFullscreen ? '100vh' : 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
       {/* Header */}
       {title && !isFullscreen && (
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border-color, #e5e5e5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <h3
-            style={{
-              margin: 0,
-              fontSize: '1.125rem',
-              fontWeight: 600,
-              color: 'var(--text-primary, #1d1d1f)',
-            }}
-          >
-            {title}
-          </h3>
-          <span
-            style={{
-              fontSize: '0.875rem',
-              color: 'var(--text-secondary, #86868b)',
-            }}
-          >
+        <div className={styles.header}>
+          <h3 className={styles.headerTitle}>{title}</h3>
+          <span className={styles.headerCounter}>
             {currentIndex + 1} / {totalSlides}
           </span>
         </div>
       )}
 
       {/* Slide Area */}
-      <div
-        style={{
-          position: 'relative',
-          flex: isFullscreen ? 1 : 'none',
-          aspectRatio: isFullscreen ? undefined : '16 / 9',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: isFullscreen ? '#000' : 'var(--surface, #f5f5f5)',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Current Slide Image */}
-        {!isLoaded[currentIndex] && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-secondary, #86868b)',
-            }}
-          >
+      <div className={cx(styles.slideArea, isFullscreen && styles.slideAreaFullscreen)}>
+        {/* Loading Spinner */}
+        {!isLoaded && !isError && (
+          <div className={styles.loading}>
             <svg
+              className={styles.spinner}
               width="40"
               height="40"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              style={{
-                animation: 'spin 1s linear infinite',
-              }}
             >
               <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
             </svg>
           </div>
         )}
-        <img
-          src={getImageSrc(slides[currentIndex].src)}
-          alt={slides[currentIndex].alt || `Slide ${currentIndex + 1}`}
-          onLoad={() => handleImageLoad(currentIndex)}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '100%',
-            objectFit: 'contain',
-            opacity: isLoaded[currentIndex] ? 1 : 0,
-            transition: 'opacity 0.3s ease',
-          }}
-          draggable={false}
-        />
+
+        {/* Error State */}
+        {isError && (
+          <div className={styles.errorState}>
+            <svg
+              width="40"
+              height="40"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <span>图片加载失败</span>
+          </div>
+        )}
+
+        {/* Slide Image */}
+        {!isError && (
+          <img
+            src={resolvedSrcs[currentIndex]}
+            alt={slides[currentIndex].alt || `Slide ${currentIndex + 1}`}
+            className={styles.slideImage}
+            style={{ opacity: isLoaded ? 1 : 0 }}
+            onLoad={() => handleImageLoad(currentIndex)}
+            onError={() => handleImageError(currentIndex)}
+            draggable={false}
+          />
+        )}
 
         {/* Left Arrow */}
         <button
+          className={cx(styles.navButton, styles.navButtonLeft)}
           onClick={(e) => {
             e.stopPropagation();
             goPrev();
           }}
           aria-label="上一页"
-          style={{
-            position: 'absolute',
-            left: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: '#fff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '20px',
-            transition: 'background-color 0.2s, opacity 0.2s',
-            opacity: 0.7,
-            backdropFilter: 'blur(8px)',
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLElement).style.opacity = '1';
-            (e.target as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.7)';
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLElement).style.opacity = '0.7';
-            (e.target as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.5)';
-          }}
         >
           ‹
         </button>
 
         {/* Right Arrow */}
         <button
+          className={cx(styles.navButton, styles.navButtonRight)}
           onClick={(e) => {
             e.stopPropagation();
             goNext();
           }}
           aria-label="下一页"
-          style={{
-            position: 'absolute',
-            right: '12px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            color: '#fff',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '20px',
-            transition: 'background-color 0.2s, opacity 0.2s',
-            opacity: 0.7,
-            backdropFilter: 'blur(8px)',
-          }}
-          onMouseEnter={(e) => {
-            (e.target as HTMLElement).style.opacity = '1';
-            (e.target as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.7)';
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLElement).style.opacity = '0.7';
-            (e.target as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.5)';
-          }}
         >
           ›
         </button>
 
-        {/* Fullscreen slide counter overlay */}
+        {/* Fullscreen counter overlay */}
         {isFullscreen && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '16px',
-              right: '16px',
-              padding: '6px 14px',
-              borderRadius: '20px',
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              color: '#fff',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-              backdropFilter: 'blur(8px)',
-            }}
-          >
+          <div className={styles.counterOverlay}>
             {currentIndex + 1} / {totalSlides}
           </div>
         )}
@@ -371,51 +284,19 @@ export default function PresentationCarousel({
 
       {/* Caption */}
       {slides[currentIndex].caption && (
-        <div
-          style={{
-            padding: isFullscreen ? '12px 20px' : '10px 20px',
-            textAlign: 'center',
-            fontSize: '0.9375rem',
-            color: isFullscreen ? '#ccc' : 'var(--text-secondary, #86868b)',
-            backgroundColor: isFullscreen ? 'rgba(0,0,0,0.8)' : 'transparent',
-          }}
-        >
+        <div className={cx(styles.caption, isFullscreen && styles.captionFullscreen)}>
           {slides[currentIndex].caption}
         </div>
       )}
 
       {/* Controls Bar */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '12px',
-          padding: isFullscreen ? '12px 20px 20px' : '12px 20px 16px',
-          backgroundColor: isFullscreen ? 'rgba(0,0,0,0.8)' : 'transparent',
-        }}
-      >
-        {/* Play/Pause Button */}
+      <div className={cx(styles.controlsBar, isFullscreen && styles.controlsBarFullscreen)}>
+        {/* Play/Pause */}
         <button
+          className={cx(styles.controlButton, isFullscreen && styles.controlButtonFullscreen)}
           onClick={() => setIsPlaying((p) => !p)}
           aria-label={isPlaying ? '暂停' : '播放'}
           title={isPlaying ? '暂停 (Space)' : '播放 (Space)'}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: isFullscreen
-              ? '1.5px solid rgba(255,255,255,0.3)'
-              : '1.5px solid var(--border-color, #d2d2d7)',
-            backgroundColor: 'transparent',
-            color: isFullscreen ? '#fff' : 'var(--text-primary, #1d1d1f)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '14px',
-            transition: 'all 0.2s',
-          }}
         >
           {isPlaying ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
@@ -430,62 +311,28 @@ export default function PresentationCarousel({
         </button>
 
         {/* Progress Dots */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            maxWidth: '400px',
-          }}
-        >
+        <div className={styles.progressDots}>
           {slides.map((_, i) => (
             <button
               key={i}
+              className={cx(
+                styles.dot,
+                i === currentIndex
+                  ? (isFullscreen ? styles.dotActiveFullscreen : styles.dotActive)
+                  : (isFullscreen ? styles.dotFullscreen : undefined)
+              )}
               onClick={() => goTo(i)}
               aria-label={`跳转到第 ${i + 1} 页`}
-              style={{
-                width: i === currentIndex ? '24px' : '8px',
-                height: '8px',
-                borderRadius: '4px',
-                border: 'none',
-                backgroundColor:
-                  i === currentIndex
-                    ? isFullscreen
-                      ? '#fff'
-                      : 'var(--primary, #0071e3)'
-                    : isFullscreen
-                      ? 'rgba(255,255,255,0.3)'
-                      : 'var(--border-color, #d2d2d7)',
-                cursor: 'pointer',
-                padding: 0,
-                transition: 'all 0.3s ease',
-              }}
             />
           ))}
         </div>
 
-        {/* Fullscreen Button */}
+        {/* Fullscreen */}
         <button
+          className={cx(styles.controlButton, isFullscreen && styles.controlButtonFullscreen)}
           onClick={toggleFullscreen}
           aria-label={isFullscreen ? '退出全屏' : '全屏'}
           title={isFullscreen ? '退出全屏 (Esc)' : '全屏 (F)'}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            border: isFullscreen
-              ? '1.5px solid rgba(255,255,255,0.3)'
-              : '1.5px solid var(--border-color, #d2d2d7)',
-            backgroundColor: 'transparent',
-            color: isFullscreen ? '#fff' : 'var(--text-primary, #1d1d1f)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-          }}
         >
           {isFullscreen ? (
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -501,45 +348,19 @@ export default function PresentationCarousel({
 
       {/* Thumbnail Strip */}
       {!isFullscreen && totalSlides > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            padding: '0 20px 16px',
-            overflowX: 'auto',
-            scrollbarWidth: 'thin',
-          }}
-        >
-          {slides.map((slide, i) => (
+        <div className={styles.thumbnailStrip}>
+          {slides.map((_, i) => (
             <button
               key={i}
+              className={cx(styles.thumbnail, i === currentIndex && styles.thumbnailActive)}
               onClick={() => goTo(i)}
               aria-label={`跳转到第 ${i + 1} 页`}
-              style={{
-                flexShrink: 0,
-                width: '72px',
-                height: '40px',
-                borderRadius: '6px',
-                overflow: 'hidden',
-                border:
-                  i === currentIndex
-                    ? '2px solid var(--primary, #0071e3)'
-                    : '2px solid transparent',
-                cursor: 'pointer',
-                padding: 0,
-                opacity: i === currentIndex ? 1 : 0.6,
-                transition: 'all 0.2s',
-                backgroundColor: 'var(--border-color, #d2d2d7)',
-              }}
             >
               <img
-                src={getImageSrc(slide.src)}
+                src={resolvedSrcs[i]}
                 alt={`缩略图 ${i + 1}`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
+                className={styles.thumbnailImage}
+                loading="lazy"
                 draggable={false}
               />
             </button>
@@ -549,36 +370,12 @@ export default function PresentationCarousel({
 
       {/* Keyboard hints */}
       {!isFullscreen && (
-        <div
-          style={{
-            padding: '0 20px 12px',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '16px',
-            fontSize: '0.75rem',
-            color: 'var(--text-secondary, #86868b)',
-            opacity: 0.7,
-          }}
-        >
+        <div className={styles.keyboardHints}>
           <span>← → 翻页</span>
           <span>Space 播放/暂停</span>
           <span>F 全屏</span>
         </div>
       )}
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .presentation-carousel:focus {
-          box-shadow: 0 0 0 2px var(--primary, #0071e3);
-        }
-        .presentation-carousel:fullscreen {
-          display: flex !important;
-          flex-direction: column !important;
-        }
-      `}</style>
     </div>
   );
 }
