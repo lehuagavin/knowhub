@@ -5,6 +5,9 @@ import { topics, getTopic } from '../../../data/topics';
 import { url } from '../../../utils/path';
 import type { GetStaticPaths } from 'astro';
 
+// 加载所有文章 Markdown 内容
+const contentFiles = import.meta.glob('/src/content/**/*.md', { eager: true }) as Record<string, { compiledContent: () => string }>;
+
 export const getStaticPaths = (() => {
   return topics.flatMap((topic) =>
     topic.articles.map((article) => ({
@@ -44,6 +47,11 @@ const formattedUpdated = article.updated
     })
   : null;
 
+// 加载对应的 Markdown 内容
+const contentKey = `/src/content/${slug}/${articleSlug}.md`;
+const contentModule = contentFiles[contentKey];
+const htmlContent = contentModule?.compiledContent?.() || '';
+
 const breadcrumbItems = [
   { name: topic.name, href: url(`/topics/${topic.slug}`) },
   { name: article.title },
@@ -82,7 +90,11 @@ const breadcrumbItems = [
         </header>
 
         <div class="article-body prose">
-          <p class="placeholder-text">文章内容即将更新...</p>
+          {htmlContent ? (
+            <Fragment set:html={htmlContent} />
+          ) : (
+            <p class="placeholder-text">文章内容即将更新...</p>
+          )}
         </div>
       </article>
 

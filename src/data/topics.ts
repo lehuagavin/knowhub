@@ -26,7 +26,16 @@ export const topics: Topic[] = [
     description: 'Rust 语言核心概念、所有权系统、并发编程、生态工具等',
     icon: '🦀',
     color: '#dea584',
-    articles: [],
+    articles: [
+      {
+        slug: 'design-philosophy',
+        title: 'Rust 设计哲学：安全、并发与零成本抽象',
+        summary: '深入剖析 Rust 语言的六大设计哲学：零成本抽象、所有权系统、无畏并发、显式优于隐式、编译期保证和实用主义，理解 Rust 为何能在安全性和性能之间取得完美平衡。',
+        tags: ['Rust', '设计哲学', '所有权', '并发', '类型系统'],
+        date: '2026-02-07',
+        readingTime: '10 分钟',
+      },
+    ],
   },
   {
     slug: 'multimodal-agent',
