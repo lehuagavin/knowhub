@@ -282,3 +282,69 @@ const breadcrumbItems = [
     }
   }
 </style>
+
+<script>
+  // Mermaid 图表渲染 - 使用本地安装的 mermaid 包（Vite 打包）
+  import mermaid from 'mermaid';
+
+  async function initMermaid() {
+    // Astro/Shiki 渲染后结构：<pre class="astro-code" data-language="mermaid"><code>...</code></pre>
+    const blocks = document.querySelectorAll('pre[data-language="mermaid"]');
+    if (blocks.length === 0) return;
+
+    const theme = document.documentElement.getAttribute('data-theme');
+    const isDark = theme === 'dark' || theme === 'github-dark';
+
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: isDark ? 'dark' : 'default',
+      securityLevel: 'loose',
+      fontFamily: 'Inter, system-ui, sans-serif',
+    });
+
+    // 将 Shiki 代码块替换为 mermaid 容器
+    blocks.forEach((pre) => {
+      const code = pre.textContent || '';
+      if (!code.trim()) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'mermaid-wrapper';
+      const div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = code.trim();
+      wrapper.appendChild(div);
+      pre.replaceWith(wrapper);
+    });
+
+    // 逐个渲染 mermaid 图表，跳过出错的图表
+    const mermaidDivs = document.querySelectorAll('.mermaid');
+    for (let i = 0; i < mermaidDivs.length; i++) {
+      const div = mermaidDivs[i] as HTMLElement;
+      const code = div.textContent || '';
+      const id = `mermaid-diagram-${i}`;
+      try {
+        const { svg } = await mermaid.render(id, code);
+        div.innerHTML = svg;
+      } catch (err) {
+        console.warn(`Mermaid 图表 ${i} 渲染失败:`, err);
+        // 渲染失败时显示原始代码
+        div.style.whiteSpace = 'pre-wrap';
+        div.style.fontFamily = 'monospace';
+        div.style.fontSize = '0.85rem';
+        div.style.color = '#999';
+        div.style.padding = '1rem';
+      }
+    }
+  }
+
+  // 等待 DOM 就绪后初始化
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMermaid);
+  } else {
+    initMermaid();
+  }
+
+  // Astro 视图过渡兼容
+  document.addEventListener('astro:after-swap', initMermaid);
+</script>
+

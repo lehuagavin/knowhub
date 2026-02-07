@@ -177,8 +177,6 @@ The skill shall:
 6.deliver the final design-guide.md file and the html page under ./claude/skills/design-guide/output/<sitename>
 
 
-
-
 ## UI/UX
 
 仔细浏览https://motherduck.com/，分析其页面的设计风格，抽取设计风格的核心要素，如border/padding/margin/font/color/typographics/components,撰写一个可以复刻motherduck的网站设计风格。

@@ -1,0 +1,46 @@
+---
+title: Rust 核心概念精讲
+---
+
+import PresentationCarousel from '../../components/interactive/PresentationCarousel.tsx';
+
+<PresentationCarousel
+  client:load
+  title="Rust 核心概念精讲"
+  slides={[
+    {
+      src: "/images/presentations/rust-essentials/01.png",
+      alt: "Rust 核心概念精讲 - 标题页",
+      caption: "Rust 核心概念精讲 — 设计哲学 · 所有权系统 · 无畏并发"
+    },
+    {
+      src: "/images/presentations/rust-essentials/02.png",
+      alt: "六大设计哲学",
+      caption: "六大设计哲学：零成本抽象、所有权系统、无畏并发、显式优于隐式、编译期保证、实用主义"
+    },
+    {
+      src: "/images/presentations/rust-essentials/03.png",
+      alt: "零成本抽象",
+      caption: "零成本抽象 — What you don't use, you don't pay for. 迭代器链 ≡ 手写循环，泛型单态化消除动态分发"
+    },
+    {
+      src: "/images/presentations/rust-essentials/04.png",
+      alt: "所有权系统",
+      caption: "所有权系统三条核心规则 — 唯一所有者 · 作用域自动释放 · Move 语义（非隐式复制）"
+    },
+  ]}
+/>
+
+### 内容概要
+
+本演示文稿提取自以下两篇文章的核心内容：
+
+- **Rust 设计哲学：安全、并发与零成本抽象** — 深入剖析 Rust 的六大设计哲学
+- **Rust 所有权系统深度解析** — 从设计原理到最佳实践的全方位解读
+
+#### 幻灯片内容
+
+1. **标题页** — Rust 核心概念精讲总览
+2. **六大设计哲学** — 零成本抽象、所有权系统、无畏并发、显式优于隐式、编译期保证、实用主义
+3. **零成本抽象** — 高级抽象编译后与手写底层代码性能等价，迭代器链 vs 手写循环
+4. **所有权系统** — 三条核心规则：唯一所有者、作用域自动释放（Drop）、Move 语义

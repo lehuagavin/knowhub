@@ -39,6 +39,15 @@ export const topics: Topic[] = [
         readingTime: '10 分钟',
         image: '/images/articles/rust-design-philosophy.png',
       },
+      {
+        slug: 'ownership-system',
+        title: 'Rust 所有权系统深度解析：从设计原理到最佳实践',
+        summary: '全方位深入剖析 Rust 所有权系统的设计哲学与内部机制，涵盖所有权规则、借用系统、生命周期、智能指针、内部可变性等核心概念，结合 Mermaid 图表与实战场景详解最佳实践。',
+        tags: ['Rust', '所有权', '借用', '生命周期', '智能指针', '内存安全'],
+        date: '2026-02-07',
+        readingTime: '25 分钟',
+        image: '/images/articles/rust-ownership-system.png',
+      },
     ],
   },
   {
