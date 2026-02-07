@@ -1,318 +1,181 @@
 ---
 // Theme Switcher Component
-// Supports: Apple (default), MotherDuck themes
+// 简洁的主题切换按钮，点击直接在 Apple / MotherDuck 之间切换
 ---
 
-<div class="theme-switcher">
-  <button
-    class="theme-btn"
-    id="theme-toggle"
-    aria-label="切换主题"
-    title="切换设计风格"
-  >
-    <span class="theme-icon" id="theme-icon">
-      <!-- Apple icon (default) -->
-      <svg class="icon icon-apple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-        <path d="M12 6v6l4 2"/>
+<button
+  class="theme-toggle"
+  id="theme-toggle"
+  aria-label="切换主题"
+  title="切换设计风格"
+>
+  <span class="toggle-track">
+    <span class="toggle-thumb" id="toggle-thumb">
+      <svg class="toggle-icon icon-apple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="4"/>
+        <circle cx="12" cy="12" r="3"/>
+        <line x1="12" y1="3" x2="12" y2="6"/>
+        <line x1="12" y1="18" x2="12" y2="21"/>
+        <line x1="3" y1="12" x2="6" y2="12"/>
+        <line x1="18" y1="12" x2="21" y2="12"/>
       </svg>
-      <!-- MotherDuck icon -->
-      <svg class="icon icon-duck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <ellipse cx="12" cy="14" rx="8" ry="6"/>
-        <circle cx="12" cy="7" r="4"/>
-        <path d="M9 6.5c0 0 1-1.5 3-1.5s3 1.5 3 1.5"/>
-        <circle cx="10.5" cy="6" r="0.5" fill="currentColor"/>
-        <circle cx="13.5" cy="6" r="0.5" fill="currentColor"/>
-        <path d="M11 8h2"/>
+      <svg class="toggle-icon icon-duck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13 5.5c0-1.5-1-3-3-3s-3 1.5-3 3c0 1 .5 2 1.5 2.5"/>
+        <circle cx="8.5" cy="4.5" r="0.5" fill="currentColor"/>
+        <path d="M5 8c-2 1-3 3-3 5.5C2 17 5 20 10 20h4c5 0 8-3 8-6.5S20 8 17 7"/>
+        <path d="M7 8c1-1 3-1.5 5-1.5s4 .5 5 1.5"/>
       </svg>
     </span>
-    <span class="theme-label" id="theme-label">Apple</span>
-  </button>
-
-  <div class="theme-dropdown" id="theme-dropdown">
-    <button class="theme-option" data-theme="apple">
-      <span class="option-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
-      </span>
-      <span class="option-text">
-        <span class="option-name">Apple Style</span>
-        <span class="option-desc">简洁现代</span>
-      </span>
-      <span class="option-check" id="check-apple">✓</span>
-    </button>
-    <button class="theme-option" data-theme="motherduck">
-      <span class="option-icon duck-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <ellipse cx="12" cy="14" rx="8" ry="6"/>
-          <circle cx="12" cy="7" r="4"/>
-          <path d="M9 6.5c0 0 1-1.5 3-1.5s3 1.5 3 1.5"/>
-          <circle cx="10.5" cy="6" r="0.5" fill="currentColor"/>
-          <circle cx="13.5" cy="6" r="0.5" fill="currentColor"/>
-          <path d="M11 8h2"/>
-        </svg>
-      </span>
-      <span class="option-text">
-        <span class="option-name">MotherDuck</span>
-        <span class="option-desc">复古技术风</span>
-      </span>
-      <span class="option-check" id="check-motherduck"></span>
-    </button>
-  </div>
-</div>
+  </span>
+  <span class="toggle-label" id="toggle-label">Apple</span>
+</button>
 
 <style>
-  .theme-switcher {
-    position: relative;
-  }
-
-  .theme-btn {
+  .theme-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-out);
-    font-family: inherit;
-    font-size: 0.875rem;
-    color: var(--text-primary);
-  }
-
-  .theme-btn:hover {
-    background: var(--background);
-    box-shadow: var(--shadow-sm);
-  }
-
-  .theme-icon {
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .icon {
-    width: 18px;
-    height: 18px;
-    display: none;
-  }
-
-  .icon-apple {
-    display: block;
-  }
-
-  [data-theme="motherduck"] .icon-apple {
-    display: none;
-  }
-
-  [data-theme="motherduck"] .icon-duck {
-    display: block;
-  }
-
-  .theme-label {
-    font-weight: 500;
-  }
-
-  .theme-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 200px;
-    background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all var(--duration-fast) var(--ease-out);
-    z-index: 1000;
-    overflow: hidden;
-  }
-
-  .theme-dropdown.open {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-
-  .theme-option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: transparent;
+    padding: 0;
+    background: none;
     border: none;
     cursor: pointer;
-    transition: background var(--duration-fast) var(--ease-out);
-    text-align: left;
     font-family: inherit;
     color: var(--text-primary);
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .theme-option:hover {
-    background: var(--background);
-  }
-
-  .theme-option:first-child {
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  .option-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--background);
-    border-radius: var(--radius-sm);
+  .toggle-track {
+    position: relative;
+    width: 48px;
+    height: 26px;
+    background: var(--surface);
+    border: 1.5px solid var(--border-color);
+    border-radius: 13px;
+    transition: background var(--duration-normal) var(--ease-out),
+                border-color var(--duration-normal) var(--ease-out);
     flex-shrink: 0;
   }
 
-  .option-icon svg {
+  .theme-toggle:hover .toggle-track {
+    border-color: var(--primary);
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
     width: 20px;
     height: 20px;
-  }
-
-  .duck-icon {
-    background: #FFDE00;
-  }
-
-  .option-text {
+    background: var(--background);
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     display: flex;
-    flex-direction: column;
-    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--duration-normal) cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  .option-name {
+  .toggle-icon {
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    transition: opacity var(--duration-fast) var(--ease-out);
+  }
+
+  .icon-apple {
+    opacity: 1;
+  }
+
+  .icon-duck {
+    opacity: 0;
+  }
+
+  .toggle-label {
+    font-size: 0.8125rem;
     font-weight: 500;
-    font-size: 0.875rem;
-  }
-
-  .option-desc {
-    font-size: 0.75rem;
     color: var(--text-secondary);
+    transition: color var(--duration-fast) var(--ease-out);
+    white-space: nowrap;
+    user-select: none;
   }
 
-  .option-check {
-    width: 20px;
-    text-align: center;
-    color: var(--primary);
-    font-weight: bold;
+  .theme-toggle:hover .toggle-label {
+    color: var(--text-primary);
   }
 
-  /* MotherDuck theme specific styles */
-  [data-theme="motherduck"] .theme-btn {
-    border: 2px solid var(--text-primary);
-    border-radius: var(--radius-sm);
+  /* MotherDuck 激活态 */
+  :global([data-theme="motherduck"]) .toggle-track {
     background: var(--accent);
+    border-color: var(--text-primary);
+    border-width: 2px;
   }
 
-  [data-theme="motherduck"] .theme-btn:hover {
-    transform: translate(2px, -2px);
-    box-shadow: rgb(56, 56, 56) -4px 4px 0px 0px;
+  :global([data-theme="motherduck"]) .toggle-thumb {
+    transform: translateX(22px);
+    background: var(--text-primary);
   }
 
-  [data-theme="motherduck"] .theme-dropdown {
-    border: 2px solid var(--text-primary);
-    border-radius: 0;
-    box-shadow: rgb(56, 56, 56) -8px 8px 0px 0px;
+  :global([data-theme="motherduck"]) .toggle-icon {
+    color: var(--accent);
   }
 
-  [data-theme="motherduck"] .option-icon {
-    border-radius: 0;
-    border: 1px solid var(--text-primary);
+  :global([data-theme="motherduck"]) .icon-apple {
+    opacity: 0;
   }
 
-  /* Mobile adjustments */
+  :global([data-theme="motherduck"]) .icon-duck {
+    opacity: 1;
+  }
+
+  :global([data-theme="motherduck"]) .toggle-label {
+    font-family: var(--font-display);
+  }
+
+  :global([data-theme="motherduck"]) .theme-toggle:hover .toggle-track {
+    border-color: var(--text-primary);
+    box-shadow: rgb(56, 56, 56) -2px 2px 0px 0px;
+  }
+
+  /* 移动端 */
   @media (max-width: 768px) {
-    .theme-label {
+    .toggle-label {
       display: none;
-    }
-
-    .theme-btn {
-      padding: 0.5rem;
-    }
-
-    .theme-dropdown {
-      right: -1rem;
     }
   }
 </style>
 
 <script>
   const themeToggle = document.getElementById('theme-toggle');
-  const themeDropdown = document.getElementById('theme-dropdown');
-  const themeLabel = document.getElementById('theme-label');
-  const themeOptions = document.querySelectorAll('.theme-option');
-  const checkApple = document.getElementById('check-apple');
-  const checkMotherduck = document.getElementById('check-motherduck');
+  const toggleLabel = document.getElementById('toggle-label');
 
-  // Theme names mapping
   const themeNames: Record<string, string> = {
     'apple': 'Apple',
-    'motherduck': 'MotherDuck'
+    'motherduck': 'Duck'
   };
 
-  // Get saved theme or default to 'apple'
+  const themes = ['apple', 'motherduck'];
+
   function getSavedTheme(): string {
     return localStorage.getItem('theme') || 'apple';
   }
 
-  // Apply theme to document
   function applyTheme(theme: string): void {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
 
-    // Update label
-    if (themeLabel) {
-      themeLabel.textContent = themeNames[theme] || theme;
-    }
-
-    // Update checkmarks
-    if (checkApple && checkMotherduck) {
-      checkApple.textContent = theme === 'apple' ? '✓' : '';
-      checkMotherduck.textContent = theme === 'motherduck' ? '✓' : '';
+    if (toggleLabel) {
+      toggleLabel.textContent = themeNames[theme] || theme;
     }
   }
 
-  // Initialize theme on page load
+  // 页面加载时初始化主题
   applyTheme(getSavedTheme());
 
-  // Toggle dropdown
-  themeToggle?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    themeDropdown?.classList.toggle('open');
-  });
-
-  // Handle theme selection
-  themeOptions.forEach(option => {
-    option.addEventListener('click', () => {
-      const theme = option.getAttribute('data-theme');
-      if (theme) {
-        applyTheme(theme);
-        themeDropdown?.classList.remove('open');
-      }
-    });
-  });
-
-  // Close dropdown when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!themeToggle?.contains(e.target as Node) && !themeDropdown?.contains(e.target as Node)) {
-      themeDropdown?.classList.remove('open');
-    }
-  });
-
-  // Close dropdown on escape key
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      themeDropdown?.classList.remove('open');
-    }
+  // 点击切换主题
+  themeToggle?.addEventListener('click', () => {
+    const current = getSavedTheme();
+    const currentIdx = themes.indexOf(current);
+    const nextIdx = (currentIdx + 1) % themes.length;
+    applyTheme(themes[nextIdx]);
   });
 </script>
