@@ -18,7 +18,7 @@ export const presentations: Presentation[] = [
       '从设计哲学到所有权系统，快速掌握 Rust 语言的核心设计理念与关键机制，涵盖零成本抽象、借用系统、无畏并发、智能指针等核心话题。',
     date: '2026-02-07',
     coverImage: '/images/presentations/rust-essentials/01.jpg',
-    slideCount: 2,
+    slideCount: 7,
     tags: ['Rust', '设计哲学', '所有权', '并发'],
   },
 ];
