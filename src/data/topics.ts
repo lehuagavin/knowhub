@@ -48,6 +48,15 @@ export const topics: Topic[] = [
         readingTime: '25 分钟',
         image: '/images/articles/rust-ownership-system.png',
       },
+      {
+        slug: 'smart-pointers',
+        title: 'Rust 智能指针：从原理到实战',
+        summary: '系统剖析 Rust 标准库中的智能指针体系，涵盖 Box、Rc/Arc、Cell/RefCell、Cow、Pin 等核心类型的内存布局、实现原理与组合模式，结合 Mermaid 图表与决策树指导实战选型。',
+        tags: ['Rust', '智能指针', '内存管理', '所有权', '并发', 'RAII'],
+        date: '2026-02-10',
+        readingTime: '30 分钟',
+        image: '/images/articles/rust-smart-pointers.png',
+      },
     ],
   },
   {
