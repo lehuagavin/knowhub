@@ -13,13 +13,13 @@ export interface Presentation {
 export const presentations: Presentation[] = [
   {
     slug: 'rust-essentials',
-    title: 'Rust 核心概念精讲',
+    title: 'Rust 设计哲学',
     description:
-      '从设计哲学到所有权系统，快速掌握 Rust 语言的核心设计理念与关键机制，涵盖零成本抽象、借用系统、无畏并发、智能指针等核心话题。',
+      '深入剖析 Rust 语言的六大设计哲学：零成本抽象、所有权系统、无畏并发、显式优于隐式、实用主义、编译期保证。理解这些核心理念，掌握现代系统级编程的设计精髓。',
     date: '2026-02-07',
     coverImage: '/images/presentations/rust-essentials/01.jpg',
     slideCount: 7,
-    tags: ['Rust', '设计哲学', '所有权', '并发'],
+    tags: ['Rust', '设计哲学', '零成本抽象', '所有权系统', '无畏并发', '编译期保证'],
   },
 ];
 
