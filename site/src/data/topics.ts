@@ -69,6 +69,25 @@ export const topics: Topic[] = [
     articles: [],
   },
   {
+    slug: 'architecture',
+    name: '架构设计',
+    description: '优秀开源项目的架构剖析、设计模式、接口哲学与工程实践',
+    icon: '🏛️',
+    color: '#0ea5e9',
+    heroImage: '/images/topics/architecture-hero.png',
+    articles: [
+      {
+        slug: 'claude-agent-sdk-architecture',
+        title: 'Claude Agent SDK Python 架构设计解析',
+        summary: '从架构视角系统剖析 Anthropic Claude Agent SDK 的四层分层设计、双模式 API、双向控制协议、三方协作数据流与扩展机制，提炼值得借鉴的工程设计原则。',
+        tags: ['架构设计', 'SDK', 'Claude', 'Agent', 'Python', 'MCP', '异步编程'],
+        date: '2026-02-13',
+        readingTime: '20 分钟',
+        image: '/images/articles/claude-agent-sdk-architecture.png',
+      },
+    ],
+  },
+  {
     slug: 'python',
     name: 'Python',
     description: 'Python 高级特性、异步编程、数据科学、Web开发等',

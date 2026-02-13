@@ -317,6 +317,79 @@ Claude Code CLI                    SDK Query              进程内 MCP Server
      │←──────────────────────────────│                               │
 ```
 
+### 5.4 工具权限回调数据流 (can_use_tool)
+
+三个角色：
+
+| 角色 | 是什么 | 运行位置 |
+|------|--------|----------|
+| Python 程序 (SDK) | SDK 客户端，负责发消息、接消息、执行回调 | 用户进程 |
+| Claude CLI | 本地子进程，管理会话、编排工具调用 | 本地子进程 |
+| Claude LLM | Anthropic 云端大模型，负责推理和决策 | 远程 API |
+
+```
+Python 程序 (SDK)               Claude CLI (子进程)           Claude LLM (远程)
+     |                              |                           |
+1.   | --- query("Run echo...") --> |                           |
+     |    (通过 stdin 发送给子进程)    |                           |
+     |                              |                           |
+2.   |                              | --- API 请求 ------------> |
+     |                              |    (把 prompt + 工具定义    |
+     |                              |     发给云端模型)           |
+     |                              |                           |
+3.   |                              | <-- API 响应 ------------ |
+     |                              |    (模型决定: 调用 Bash     |
+     |                              |     tool, command="echo   |
+     |                              |     'hello...'")          |
+     |                              |                           |
+4.   | <-- tool_use 事件 ---------- |                           |
+     |    (CLI 通过 stdout 告诉 SDK: |                           |
+     |     模型想用 Bash 工具)        |                           |
+     |                              |                           |
+5.   | permission_handler() 执行    |                           |
+     | (用户的 Python 回调在用户进程   |                           |
+     |  里判断: echo 命令安全，允许)   |                           |
+     |                              |                           |
+6.   | --- Allow ----------------> |                           |
+     |    (SDK 把允许结果发回给 CLI)   |                           |
+     |                              |                           |
+7.   |                              | 执行 Bash: echo 'hello..' |
+     |                              | (CLI 在本地执行命令)        |
+     |                              |                           |
+8.   |                              | --- API 请求 ------------> |
+     |                              |    (把工具执行结果发给模型)   |
+     |                              |                           |
+9.   |                              | <-- API 响应 ------------ |
+     |                              |    (模型生成最终文本回复)     |
+     |                              |                           |
+10.  | <-- AssistantMessage ------  |                           |
+     | <-- ResultMessage ---------  |                           |
+     |    (SDK 收到流式消息)          |                           |
+```
+
+权限被拒绝时，流程在第 6 步分叉：
+
+```
+5.   | permission_handler() 执行
+     | 检测到 "rm "，拒绝
+     |
+6.   | --- Deny(message=...) ----> |
+     |                              |
+7.   |                              | --- API 请求 ------------> |
+     |                              |    (告诉模型: 工具被拒绝，    |
+     |                              |     原因是 "Dangerous...")  |
+     |                              |                           |
+8.   |                              | <-- API 响应 ------------ |
+     |                              |    (模型换个方式回复，       |
+     |                              |     或尝试其他工具)         |
+```
+
+关键点：
+- 回调在用户的 Python 进程中执行，不是 CLI 也不是 LLM
+- Claude CLI 是中间人，通过 stdin/stdout 与 SDK 通信，同时负责调用远程 API 和本地执行工具
+- Claude LLM 只做决策（调用什么工具、传什么参数），不执行任何东西，也不知道权限回调的存在
+- CLI 不会执行被拒绝的命令，而是把拒绝原因反馈给 LLM，让它自行调整
+
 ---
 
 ## 6. 传输层实现 — CLI 子进程管理
@@ -464,6 +537,89 @@ MINIMUM_CLAUDE_CODE_VERSION = "2.0.0"
 ```bash
 export CLAUDE_AGENT_SDK_SKIP_VERSION_CHECK=1
 ```
+
+### 6.6 Transport 包架构设计优点
+
+#### 6.6.1 策略模式 + 依赖倒置（DIP）
+
+上层 `Query` 类依赖抽象的 `Transport` 接口，而非具体的 `SubprocessCLITransport`：
+
+```
+Query → Transport (抽象) ← SubprocessCLITransport (具体)
+```
+
+高层模块不依赖低层模块，两者都依赖抽象。扩展新的传输方式（如 WebSocket）只需实现 `Transport` 接口，`Query` 无需修改。测试时可注入 mock transport，无需启动真实子进程。
+
+#### 6.6.2 异步优先（async-native）+ 运行时无关
+
+整个接口基于 `async/await` 定义，底层选择 `anyio` 而非直接使用 `asyncio`：
+
+- `anyio` 是异步运行时抽象层，同时兼容 `asyncio` 和 `trio`，SDK 使用者不被锁定在特定运行时
+- `TextReceiveStream` / `TextSendStream` 提供类型安全的文本流封装，无需手动处理字节编解码
+- stderr 后台读取通过 `TaskGroup` 管理，生命周期跟随 transport，不会泄漏协程
+
+#### 6.6.3 接口最小化（ISP）
+
+`Transport` 抽象类仅定义 6 个方法：`connect`、`write`、`read_messages`、`close`、`is_ready`、`end_input`。
+
+`_build_command()`、`_find_cli()`、`_check_claude_version()` 等子进程特有逻辑全部作为 `SubprocessCLITransport` 的私有方法，不污染抽象接口。未来的 WebSocket 实现无需处理与自身无关的方法。
+
+#### 6.6.4 并发安全设计（TOCTOU 防护）
+
+`write()` 和 `close()` 共享同一把 `_write_lock`，将"检查状态 + 使用资源"封装为原子操作：
+
+```python
+# write() — 检查和使用在同一临界区内
+async with self._write_lock:
+    if not self._ready or not self._stdin_stream:  # 检查
+        raise ...
+    await self._stdin_stream.send(data)             # 使用
+
+# close() — 状态修改也在同一把锁内
+async with self._write_lock:
+    self._ready = False
+    await self._stdin_stream.aclose()
+```
+
+如果不加锁，`close()` 可能在 `write()` 检查完 `_ready` 之后、实际写入之前关闭 stdin，导致写入已关闭的流。锁消除了 TOCTOU（Time-of-check to time-of-use）竞态条件。`end_input()` 同样共用此锁，保护 stdin 关闭与写入之间的互斥。
+
+#### 6.6.5 投机式 JSON 解析
+
+`_read_messages_impl()` 不依赖换行符或长度前缀界定消息边界，而是利用 JSON 自身的语法完整性进行投机式解析：
+
+```
+收到文本片段 → 追加到 buffer → 尝试 json.loads()
+├─ 成功 → yield 解析结果，清空 buffer
+├─ 失败 → 继续累积（可能是被截断的长行）
+└─ 超过 1MB → 抛出 SDKJSONDecodeError
+```
+
+这种设计的原因是 `TextReceiveStream` 可能在任意位置截断长行，无法保证每次收到完整的一行 JSON。buffer 上限（默认 1MB，可通过 `max_buffer_size` 配置）兜底防止异常数据撑爆内存。
+
+#### 6.6.6 优雅降级（Graceful Degradation）
+
+辅助功能的失败不阻断核心功能：
+
+- 版本检查失败仅输出 warning，不阻断连接
+- stderr 读取中的异常全部静默吞掉，不影响主流程
+- `close()` 中每一步都用 `suppress(Exception)` 包裹，确保清理过程不因某一步失败而中断后续清理
+- CLI 查找有多级 fallback：bundled → PATH → 硬编码常见路径
+
+#### 6.6.7 关注点分离
+
+职责划分清晰，每个方法只做一件事：
+
+| 层次 | 职责 |
+|------|------|
+| `Transport` 抽象 | 定义通信契约 |
+| `SubprocessCLITransport` | 子进程生命周期 + 流式 I/O |
+| `_build_command()` | 配置到 CLI 参数的映射 |
+| `_build_settings_value()` | settings/sandbox 的合并逻辑 |
+| `_find_cli()` / `_find_bundled_cli()` | CLI 二进制的发现策略 |
+| `_check_claude_version()` | 版本兼容性检查 |
+| `_handle_stderr()` | stderr 流的异步消费 |
+
+包结构本身也体现了这一原则：`__init__.py` 定义接口契约（是什么），`subprocess_cli.py` 提供具体实现（怎么做），新增传输方式只需添加文件，无需修改现有代码。
 
 ---
 

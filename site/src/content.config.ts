@@ -18,6 +18,11 @@ const python = defineCollection({
   schema: z.object({}).passthrough().optional(),
 });
 
+const architecture = defineCollection({
+  type: 'content',
+  schema: z.object({}).passthrough().optional(),
+});
+
 const presentations = defineCollection({
   type: 'content',
   schema: z.object({}).passthrough().optional(),
@@ -27,5 +32,6 @@ export const collections = {
   rust,
   'multimodal-agent': multimodalAgent,
   python,
+  architecture,
   presentations,
 };
