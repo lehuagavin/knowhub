@@ -36,6 +36,15 @@ __pycache__/
 .Python
 venv/
 .venv/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Rust
+target/
+**/*.rs.bk
 
 # Temporary files
 *.tmp
